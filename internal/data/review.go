@@ -13,7 +13,7 @@ var ErrRecordNotFound = errors.New("record not found")
 
 type Review struct {
 	ID           int64     `json:"id"`
-	BookID       int64     `json:"book_id"`        // Changed from product_id to book_id
+	BookID       int64     `json:"book_id"`        
 	Content      string    `json:"content"`
 	Author       string    `json:"author"`
 	Rating       int       `json:"rating"`         
@@ -26,7 +26,6 @@ type ReviewModel struct {
 	DB *sql.DB
 }
 
-// Insert adds a new review to the database
 func (m ReviewModel) Insert(review *Review) error {
 	query := `
 		INSERT INTO reviews (book_id, content, author, rating, helpful_count)
@@ -66,15 +65,6 @@ func (m *ReviewModel) Get(bookID, reviewID int64) (*Review, error) {
         &review.Version,
     )
 
-    // if err != nil {
-    //     switch {
-    //     case errors.Is(err, sql.ErrNoRows):
-    //         return nil, ErrRecordNotFound
-    //     default:
-    //         return nil, err
-    //     }
-    // }
-
 	if err != nil {
         // Log the error message
         log.Printf("Error fetching review with book_id %d and review_id %d: %v", bookID, reviewID, err)
@@ -82,9 +72,9 @@ func (m *ReviewModel) Get(bookID, reviewID int64) (*Review, error) {
         // Check if the error is because no record was found
         switch {
         case errors.Is(err, sql.ErrNoRows):
-            return nil, ErrRecordNotFound // Return the custom error for "not found"
+            return nil, ErrRecordNotFound 
         default:
-            return nil, err // Return other types of errors
+            return nil, err 
         }
     }
 
@@ -92,7 +82,6 @@ func (m *ReviewModel) Get(bookID, reviewID int64) (*Review, error) {
 }
 
 
-// Update modifies an existing review
 func (m ReviewModel) Update(review *Review) error {
 	query := `
 		UPDATE reviews
@@ -118,7 +107,6 @@ func (m ReviewModel) Update(review *Review) error {
 	return nil
 }
 
-// Delete removes a review for a book from the database
 func (m ReviewModel) Delete(bookID, reviewID int64) error {
 	if bookID < 1 || reviewID < 1 {
 		return ErrRecordNotFound
@@ -148,7 +136,6 @@ func (m ReviewModel) Delete(bookID, reviewID int64) error {
 	return nil
 }
 
-// GetAll retrieves all reviews, with optional filters
 func (m ReviewModel) GetAll(content, author string, rating int, filters Filters) ([]*Review, Metadata, error) {
 	query := fmt.Sprintf(`
 		SELECT COUNT(*) OVER(), id, book_id, content, author, rating, helpful_count, created_at, version
@@ -206,7 +193,6 @@ func (m ReviewModel) GetAll(content, author string, rating int, filters Filters)
 	return reviews, metadata, nil
 }
 
-// GetAllForBook retrieves reviews for a specific book
 func (m ReviewModel) GetAllForBook(bookID int64, content, author string, rating int, filters Filters) ([]*Review, Metadata, error) {
 	query := fmt.Sprintf(`
 		SELECT COUNT(*) OVER(), id, book_id, content, author, rating, helpful_count, created_at, version
@@ -266,7 +252,6 @@ func (m ReviewModel) GetAllForBook(bookID int64, content, author string, rating 
 	return reviews, metadata, nil
 }
 
-// GetAllByUser retrieves all reviews written by a user
 func (m *ReviewModel) GetAllByUser(userID int64, filters Filters) ([]*Review, Metadata, error) {
 	query := fmt.Sprintf(`
 		SELECT COUNT(*) OVER(), id, book_id, content, author, rating, helpful_count, created_at, version

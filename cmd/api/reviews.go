@@ -13,7 +13,7 @@ import (
 )
 
 func (a *applicationDependencies) createReviewHandler(w http.ResponseWriter, r *http.Request) {
-	bookID, err := a.readIDParam(r)  // Changed to BookID
+	bookID, err := a.readIDParam(r)  
 	if err != nil {
 		a.notFoundResponse(w, r)
 		return
@@ -33,19 +33,12 @@ func (a *applicationDependencies) createReviewHandler(w http.ResponseWriter, r *
 
 	// Create a review object
 	review := &data.Review{
-		BookID:  bookID,  // Changed to BookID
+		BookID:  bookID, 
 		Content: input.Content,
 		Author:  input.Author,
 		Rating:  input.Rating,
 	}
 
-	// // Validate review (You can add validation function here for review)
-	// v := validator.New()
-	// data.ValidateReview(v, review) // You may need to implement this validation
-	// if !v.IsEmpty() {
-	// 	a.failedValidationResponse(w, r, v.Errors)
-	// 	return
-	// }
 	log.Printf("Inserting review: %+v", review)
 
 	// Insert the review into the database
@@ -64,12 +57,11 @@ func (a *applicationDependencies) createReviewHandler(w http.ResponseWriter, r *
 }
 
 
-// Fetch a specific review for a book
 func (a *applicationDependencies) displayReviewHandler(w http.ResponseWriter, r *http.Request) {
     // Extract both the book_id and review_id from the URL path
     params := httprouter.ParamsFromContext(r.Context())
-    bookID := params.ByName("id")      // This gets the book ID
-    reviewID := params.ByName("review_id")  // This gets the review ID
+    bookID := params.ByName("id")  
+    reviewID := params.ByName("review_id")  
 
     // Check if either ID is empty or invalid
     if bookID == "" || reviewID == "" {
@@ -115,8 +107,8 @@ func (a *applicationDependencies) displayReviewHandler(w http.ResponseWriter, r 
 func (a *applicationDependencies) updateReviewHandler(w http.ResponseWriter, r *http.Request) {
     // Extract both the book_id and review_id from the URL path
     params := httprouter.ParamsFromContext(r.Context())
-    bookID := params.ByName("id")           // This gets the book ID
-    reviewID := params.ByName("review_id")  // This gets the review ID
+    bookID := params.ByName("id")           
+    reviewID := params.ByName("review_id")  
 
     // Ensure both bookID and reviewID are integers (as they are passed as strings)
     bookIDInt, err := strconv.ParseInt(bookID, 10, 64)
@@ -131,16 +123,16 @@ func (a *applicationDependencies) updateReviewHandler(w http.ResponseWriter, r *
         return
     }
 
-    log.Printf("Book ID: %d, Review ID: %d", bookIDInt, reviewIDInt)  // Log both values for debugging
+    log.Printf("Book ID: %d, Review ID: %d", bookIDInt, reviewIDInt)  
 
     // Use both bookID and reviewID for fetching the review
-    review, err := a.reviewModel.Get(bookIDInt, reviewIDInt) // Ensure this method uses both IDs
+    review, err := a.reviewModel.Get(bookIDInt, reviewIDInt) 
     if err != nil {
         switch {
         case errors.Is(err, data.ErrRecordNotFound):
-            a.notFoundResponse(w, r)  // If review is not found, return 404
+            a.notFoundResponse(w, r)  
         default:
-            a.serverErrorResponse(w, r, err)  // Handle other errors
+            a.serverErrorResponse(w, r, err)  
         }
         return
     }
@@ -155,7 +147,7 @@ func (a *applicationDependencies) updateReviewHandler(w http.ResponseWriter, r *
 
     err = a.readJSON(w, r, &input)
     if err != nil {
-        a.badRequestResponse(w, r, err)  // If there's an error reading JSON, return 400
+        a.badRequestResponse(w, r, err)  
         return
     }
 
@@ -173,7 +165,7 @@ func (a *applicationDependencies) updateReviewHandler(w http.ResponseWriter, r *
         review.HelpfulCount = *input.HelpfulCount
     }
 
-    // Validate the updated review (optional: implement validation if needed)
+    // Validate the updated review 
     v := validator.New()
     if !v.IsEmpty() {
         a.failedValidationResponse(w, r, v.Errors)
@@ -199,8 +191,8 @@ func (a *applicationDependencies) updateReviewHandler(w http.ResponseWriter, r *
 func (a *applicationDependencies) deleteReviewHandler(w http.ResponseWriter, r *http.Request) {
     // Extract both the book_id and review_id from the URL path
     params := httprouter.ParamsFromContext(r.Context())
-    bookID := params.ByName("id")            // This gets the book ID
-    reviewID := params.ByName("review_id")   // This gets the review ID
+    bookID := params.ByName("id")          
+    reviewID := params.ByName("review_id")  
 
     // Ensure both bookID and reviewID are integers (as they are passed as strings)
     bookIDInt, err := strconv.ParseInt(bookID, 10, 64)
@@ -215,16 +207,16 @@ func (a *applicationDependencies) deleteReviewHandler(w http.ResponseWriter, r *
         return
     }
 
-    log.Printf("Book ID: %d, Review ID: %d", bookIDInt, reviewIDInt)  // Log both values for debugging
+    log.Printf("Book ID: %d, Review ID: %d", bookIDInt, reviewIDInt)  
 
     // Use both bookID and reviewID for deleting the review
-    err = a.reviewModel.Delete(bookIDInt, reviewIDInt)  // Ensure this method deletes based on both IDs
+    err = a.reviewModel.Delete(bookIDInt, reviewIDInt)  
     if err != nil {
         switch {
         case errors.Is(err, data.ErrRecordNotFound):
-            a.notFoundResponse(w, r)  // If review is not found, return 404
+            a.notFoundResponse(w, r)  
         default:
-            a.serverErrorResponse(w, r, err)  // Handle other errors
+            a.serverErrorResponse(w, r, err)  
         }
         return
     }

@@ -5,12 +5,10 @@ import (
 	"log"
 	"net/http"
 
-	//"fmt"
 	"github.com/tchenbz/AWTtest_3/internal/data"
 	"github.com/tchenbz/AWTtest_3/internal/validator"
 )
 
-// createReadingListHandler handles POST requests for creating a new reading list.
 func (a *applicationDependencies) createReadingListHandler(w http.ResponseWriter, r *http.Request) {
     var input struct {
         Name        string `json:"name"`
@@ -50,7 +48,6 @@ func (a *applicationDependencies) createReadingListHandler(w http.ResponseWriter
 }
 
 
-// displayReadingListHandler handles GET requests to fetch a specific reading list by ID.
 func (a *applicationDependencies) displayReadingListHandler(w http.ResponseWriter, r *http.Request) {
   // Extract the ID from the URL parameter
   id, err := a.readIDParam(r)
@@ -84,7 +81,6 @@ func (a *applicationDependencies) displayReadingListHandler(w http.ResponseWrite
   }
 }
 
-// updateReadingListHandler handles PATCH requests to update a specific reading list by ID.
 func (a *applicationDependencies) updateReadingListHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := a.readIDParam(r)
 	if err != nil {
@@ -107,7 +103,7 @@ func (a *applicationDependencies) updateReadingListHandler(w http.ResponseWriter
 		Name        *string  `json:"name"`
 		Description *string  `json:"description"`
 		Status      *string  `json:"status"`
-		Books       *[]int64 `json:"books"` // Books associated with the reading list
+		Books       *[]int64 `json:"books"` 
 	}
 
 	// Read the JSON input
@@ -133,8 +129,6 @@ func (a *applicationDependencies) updateReadingListHandler(w http.ResponseWriter
 
 	// Validate the updated reading list
 	v := validator.New()
-	// Add your validation function (e.g., ValidateReadingList) if needed
-	// data.ValidateReadingList(v, readingList)
 	if !v.IsEmpty() {
 		a.failedValidationResponse(w, r, v.Errors)
 		return
@@ -155,7 +149,6 @@ func (a *applicationDependencies) updateReadingListHandler(w http.ResponseWriter
 	}
 }
 
-// deleteReadingListHandler handles DELETE requests to delete a specific reading list by ID.
 func (a *applicationDependencies) deleteReadingListHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := a.readIDParam(r)
 	if err != nil {
@@ -182,7 +175,6 @@ func (a *applicationDependencies) deleteReadingListHandler(w http.ResponseWriter
 	}
 }
 
-// listReadingListsHandler handles GET requests to list all reading lists with pagination and filters.
 func (a *applicationDependencies) listReadingListsHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Name   string

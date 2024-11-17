@@ -6,29 +6,23 @@ import (
 	"errors"
 	"fmt"
 	"time"
-	//"github.com/tchenbz/AWTtest_3/internal/data"
 )
 
-//var ErrRecordNotFound = errors.New("record not found")
-
-// ReadingList represents a reading list.
 type ReadingList struct {
 	ID          int64     `json:"id"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	CreatedBy   int64     `json:"created_by"`
-	Books       []int64   `json:"books"`      // IDs of books in this list
-	Status      string    `json:"status"`     // "currently reading" or "completed"
+	Books       []int64   `json:"books"`      
+	Status      string    `json:"status"`     
 	CreatedAt   time.Time `json:"created_at"`
 	Version     int32     `json:"version"`
 }
 
-// ReadingListModel represents the model for interacting with reading lists in the database.
 type ReadingListModel struct {
 	DB *sql.DB
 }
 
-// Insert adds a new reading list to the database.
 func (m *ReadingListModel) Insert(readingList *ReadingList) error {
     query := `
         INSERT INTO reading_lists (name, description, created_by, status)
@@ -45,16 +39,15 @@ func (m *ReadingListModel) Insert(readingList *ReadingList) error {
 
     // Insert into the database and return the inserted values
     err := m.DB.QueryRowContext(context.Background(), query, args...).Scan(
-        &readingList.ID,        // Get the inserted ID
-        &readingList.CreatedAt,  // Get the created timestamp
-        &readingList.Version,    // Get the version
+        &readingList.ID,        
+        &readingList.CreatedAt, 
+        &readingList.Version,  
     )
 
     return err
 }
 
 
-// Get retrieves a specific reading list by ID.
 func (m *ReadingListModel) Get(id int64) (*ReadingList, error) {
 	if id < 1 {
 		return nil, ErrRecordNotFound
@@ -92,7 +85,6 @@ func (m *ReadingListModel) Get(id int64) (*ReadingList, error) {
 	return &readingList, nil
 }
 
-// Update updates an existing reading list.
 func (m *ReadingListModel) Update(readingList *ReadingList) error {
 	query := `
 		UPDATE reading_lists
@@ -124,7 +116,6 @@ func (m *ReadingListModel) Update(readingList *ReadingList) error {
 	return nil
 }
 
-// Delete removes a reading list from the database by ID.
 func (m *ReadingListModel) Delete(id int64) error {
 	if id < 1 {
 		return ErrRecordNotFound
@@ -154,7 +145,6 @@ func (m *ReadingListModel) Delete(id int64) error {
 	return nil
 }
 
-// GetAll retrieves all reading lists with optional filters and pagination.
 func (m *ReadingListModel) GetAll(name, status string, filters Filters) ([]*ReadingList, Metadata, error) {
 	query := fmt.Sprintf(`
 		SELECT COUNT(*) OVER(), id, name, description, created_by, status, created_at, version
@@ -209,15 +199,7 @@ func (m *ReadingListModel) GetAll(name, status string, filters Filters) ([]*Read
 	return readingLists, metadata, nil
 }
 
-// GetAllByUser retrieves all reading lists for a user, with optional filters and pagination
 func (m *ReadingListModel) GetAllByUser(userID int64, filters Filters) ([]*ReadingList, Metadata, error) {
-    // Validate filters
-    // v := validator.New()
-    // ValidateFilters(v, filters)
-    // if !v.IsEmpty() {
-    //     return nil, Metadata{}, fmt.Errorf("invalid filters: %v", v.Errors)
-    // }
-
     // Construct the SQL query
     query := fmt.Sprintf(`
         SELECT COUNT(*) OVER(), id, name, description, created_by, status, created_at, version
@@ -267,7 +249,6 @@ func (m *ReadingListModel) GetAllByUser(userID int64, filters Filters) ([]*Readi
         return nil, Metadata{}, err
     }
 
-    // Calculate pagination metadata
     metadata := calculateMetaData(totalRecords, filters.Page, filters.PageSize)
     return readingLists, metadata, nil
 }

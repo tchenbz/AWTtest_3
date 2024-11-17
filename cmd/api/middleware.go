@@ -103,7 +103,7 @@ func (a *applicationDependencies) AuthMiddleware(next http.Handler) http.Handler
             return
         }
 
-        userID := claims["user_id"].(float64) // User ID is in the token claims
+        userID := claims["user_id"].(float64) 
 
         // Store the user ID in the request context
         ctx := context.WithValue(r.Context(), "user_id", userID)

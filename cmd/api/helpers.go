@@ -91,11 +91,11 @@ func (a *applicationDependencies)readJSON(w http.ResponseWriter, r *http.Request
 
 func (a *applicationDependencies) readIDParam(r *http.Request) (int64, error) {
     params := httprouter.ParamsFromContext(r.Context())
-    idParam := params.ByName("id") // This gets the parameter by its name ("id" or "review_id")
+    idParam := params.ByName("id") 
     if idParam == "" {
         return 0, fmt.Errorf("missing or invalid ID parameter")
     }
-    id, err := strconv.ParseInt(idParam, 10, 64) // Convert string to int64
+    id, err := strconv.ParseInt(idParam, 10, 64)
     if err != nil {
         return 0, fmt.Errorf("invalid ID parameter: %v", err)
     }

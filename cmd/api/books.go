@@ -14,12 +14,12 @@ import (
 func (a *applicationDependencies) createBookHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Title          string   `json:"title"`
-		Authors        []string `json:"authors"`       // Multiple authors
+		Authors        []string `json:"authors"` 
 		ISBN           string   `json:"isbn"`
 		PublicationDate string   `json:"publication_date"`
 		Genre          string   `json:"genre"`
 		Description    string   `json:"description"`
-		AverageRating  float64  `json:"average_rating"` // Assuming a float for the average rating
+		AverageRating  float64  `json:"average_rating"` 
 	}
 
 	// Read and parse the JSON request body
@@ -40,16 +40,8 @@ func (a *applicationDependencies) createBookHandler(w http.ResponseWriter, r *ht
 		AverageRating:  input.AverageRating,
 	}
 
-	// // Validate the book data (you may create a ValidateBook function similar to ValidateProduct)
-	// v := validator.New()
-	// data.ValidateBook(v, book) // You need to implement this validation function
-	// if !v.IsEmpty() {
-	// 	a.failedValidationResponse(w, r, v.Errors)
-	// 	return
-	// }
-
 	// Insert the new book into the database
-	err = a.bookModel.Insert(book)  // Change productModel to bookModel
+	err = a.bookModel.Insert(book)  
 	if err != nil {
 		a.serverErrorResponse(w, r, err)
 		return
@@ -74,7 +66,7 @@ func (a *applicationDependencies) displayBookHandler(w http.ResponseWriter, r *h
 		return
 	}
 
-	book, err := a.bookModel.Get(id)  // Change productModel to bookModel
+	book, err := a.bookModel.Get(id)  
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -100,7 +92,7 @@ func (a *applicationDependencies) updateBookHandler(w http.ResponseWriter, r *ht
 		return
 	}
 
-	book, err := a.bookModel.Get(id)  // Change productModel to bookModel
+	book, err := a.bookModel.Get(id)  
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -150,16 +142,8 @@ func (a *applicationDependencies) updateBookHandler(w http.ResponseWriter, r *ht
 		book.AverageRating = *input.AverageRating
 	}
 
-	// // Validate the updated book
-	// v := validator.New()
-	// data.ValidateBook(v, book)
-	// if !v.IsEmpty() {
-	// 	a.failedValidationResponse(w, r, v.Errors)
-	// 	return
-	// }
-
 	// Update the book in the database
-	err = a.bookModel.Update(book)  // Change productModel to bookModel
+	err = a.bookModel.Update(book)  
 	if err != nil {
 		a.serverErrorResponse(w, r, err)
 		return
@@ -179,7 +163,7 @@ func (a *applicationDependencies) deleteBookHandler(w http.ResponseWriter, r *ht
 		return
 	}
 
-	err = a.bookModel.Delete(id)  // Change productModel to bookModel
+	err = a.bookModel.Delete(id) 
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -200,14 +184,14 @@ func (a *applicationDependencies) deleteBookHandler(w http.ResponseWriter, r *ht
 func (a *applicationDependencies) listBooksHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Title    string
-		Author   string  // Added author filter
+		Author   string 
 		Genre    string
 		data.Filters
 	}
 
 	query := r.URL.Query()
 	input.Title = a.getSingleQueryParameter(query, "title", "")
-	input.Author = a.getSingleQueryParameter(query, "author", "")  // Capture author from query parameters
+	input.Author = a.getSingleQueryParameter(query, "author", "") 
 	input.Genre = a.getSingleQueryParameter(query, "genre", "")
 	input.Filters.Page = a.getSingleIntegerParameter(query, "page", 1, validator.New())
 	input.Filters.PageSize = a.getSingleIntegerParameter(query, "page_size", 10, validator.New())
@@ -221,7 +205,6 @@ func (a *applicationDependencies) listBooksHandler(w http.ResponseWriter, r *htt
 		return
 	}
 
-	// Pass the author along with the other filters to the GetAll method
 	books, metadata, err := a.bookModel.GetAll(input.Title, input.Author, input.Genre, input.Filters)
 	if err != nil {
 		a.serverErrorResponse(w, r, err)
@@ -242,7 +225,7 @@ func (a *applicationDependencies) listBooksHandler(w http.ResponseWriter, r *htt
 func (a *applicationDependencies) searchBooksHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Title    string
-		Author   string  // Added author filter
+		Author   string  
 		Genre    string
 		data.Filters
 	}
@@ -250,14 +233,14 @@ func (a *applicationDependencies) searchBooksHandler(w http.ResponseWriter, r *h
 	// Parse query parameters
 	query := r.URL.Query()
 	input.Title = a.getSingleQueryParameter(query, "title", "")
-	input.Author = a.getSingleQueryParameter(query, "author", "")  // Capture author from query parameters
+	input.Author = a.getSingleQueryParameter(query, "author", "")  
 	input.Genre = a.getSingleQueryParameter(query, "genre", "")
 	input.Filters.Page = a.getSingleIntegerParameter(query, "page", 1, validator.New())
 	input.Filters.PageSize = a.getSingleIntegerParameter(query, "page_size", 10, validator.New())
 	input.Filters.Sort = a.getSingleQueryParameter(query, "sort", "id")
 	input.Filters.SortSafeList = []string{"id", "title", "author", "genre", "-id", "-title", "-author", "-genre"}
 
-	// Validate filters (optional)
+	// Validate filters
 	v := validator.New()
 	data.ValidateFilters(v, input.Filters)
 	if !v.IsEmpty() {
@@ -265,7 +248,7 @@ func (a *applicationDependencies) searchBooksHandler(w http.ResponseWriter, r *h
 		return
 	}
 
-	// Now call GetAll with all four arguments (title, author, genre, filters)
+	// Now call GetAll with all four arguments
 	books, metadata, err := a.bookModel.GetAll(input.Title, input.Author, input.Genre, input.Filters)
 	if err != nil {
 		a.serverErrorResponse(w, r, err)
@@ -308,6 +291,6 @@ func (a *applicationDependencies) authenticateUser(w http.ResponseWriter, r *htt
 	}
 
 	// Get the user ID from the claims
-	userID := claims["user_id"].(float64) // Assuming the user ID is stored as a float64
+	userID := claims["user_id"].(float64) 
 	return a.userModel.Get(int64(userID))
 }

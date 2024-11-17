@@ -10,7 +10,7 @@ type Filters struct {
     Page         int      `json:"page"`
     PageSize     int      `json:"page_size"`
     Sort         string   `json:"sort"`
-    SortSafeList []string `json:"sort_safe_list"` // Add valid sort options here
+    SortSafeList []string `json:"sort_safe_list"` 
 }
 
 

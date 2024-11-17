@@ -13,7 +13,7 @@ import (
 type Book struct {
 	ID              int64     `json:"id"`
 	Title           string    `json:"title"`
-	Authors         []string  `json:"authors"`        // Multiple authors
+	Authors         []string  `json:"authors"`       
 	ISBN            string    `json:"isbn"`
 	PublicationDate string    `json:"publication_date"`
 	Genre           string    `json:"genre"`
@@ -27,7 +27,6 @@ type BookModel struct {
 	DB *sql.DB
 }
 
-// Insert adds a new book to the database
 func (m *BookModel) Insert(book *Book) error {
 	query := `
 		INSERT INTO books (title, authors, isbn, publication_date, genre, description, average_rating)
@@ -50,7 +49,6 @@ func (m *BookModel) Insert(book *Book) error {
 	return m.DB.QueryRowContext(context.Background(), query, args...).Scan(&book.ID, &book.CreatedAt, &book.Version)
 }
 
-// Get retrieves a specific book by its ID
 func (m *BookModel) Get(id int64) (*Book, error) {
 	if id < 1 {
 		return nil, ErrRecordNotFound
@@ -70,7 +68,7 @@ func (m *BookModel) Get(id int64) (*Book, error) {
 	err := m.DB.QueryRowContext(ctx, query, id).Scan(
 		&book.ID,
 		&book.Title,
-		pq.Array(&book.Authors),  // Scan authors as a slice of strings
+		pq.Array(&book.Authors),  
 		&book.ISBN,
 		&book.PublicationDate,
 		&book.Genre,
@@ -99,10 +97,9 @@ func (m *BookModel) Update(book *Book) error {
 		WHERE id = $8
 		RETURNING version`
 
-	// Use pq.Array to handle authors as a slice of strings
 	args := []interface{}{
 		book.Title,
-		pq.Array(book.Authors),  // Use pq.Array for authors
+		pq.Array(book.Authors),  
 		book.ISBN,
 		book.PublicationDate,
 		book.Genre,
@@ -127,7 +124,6 @@ func (m *BookModel) Update(book *Book) error {
 	return nil
 }
 
-// Delete deletes a book from the database by ID
 func (m *BookModel) Delete(id int64) error {
 	if id < 1 {
 		return ErrRecordNotFound
@@ -157,7 +153,6 @@ func (m *BookModel) Delete(id int64) error {
 	return nil
 }
 
-// GetAll retrieves all books with optional filters and pagination
 func (m *BookModel) GetAll(title, author, genre string, filters Filters) ([]*Book, Metadata, error) {
 	query := fmt.Sprintf(`
 		SELECT COUNT(*) OVER(), id, title, authors, isbn, publication_date, genre, description, average_rating, created_at, version

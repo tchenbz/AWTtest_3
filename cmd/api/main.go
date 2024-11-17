@@ -36,14 +36,13 @@ type applicationDependencies struct {
 	bookModel     data.BookModel
 	readingListModel data.ReadingListModel
 	reviewModel   data.ReviewModel
-	userModel     data.UserModel  // Add user model for handling users
+	userModel     data.UserModel  
 }
 
 
 func main() {
 	var settings serverConfig
 
-	// Parse command line arguments
 	flag.IntVar(&settings.port, "port", 4000, "Server port")
 	flag.StringVar(&settings.environment, "env", "development", "Environment (development|staging|production)")
 	flag.StringVar(&settings.db.dsn, "db-dsn", os.Getenv("TEST3_DB_DSN"), "PostgreSQL DSN")
@@ -52,10 +51,8 @@ func main() {
 	flag.BoolVar(&settings.limiter.enabled, "limiter-enabled", true, "Enable rate limiter")
 	flag.Parse()
 
-	// Set up logging
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
-	// Open the database connection
 	db, err := openDB(settings)
 	if err != nil {
 		logger.Error(err.Error())
@@ -68,13 +65,12 @@ func main() {
 	appInstance := &applicationDependencies{
 		config:    settings,
 		logger:    logger,
-		bookModel: data.BookModel{DB: db},          // Initialize bookModel
-		readingListModel: data.ReadingListModel{DB: db}, // Initialize readingListModel
-		reviewModel: data.ReviewModel{DB: db},      // Initialize reviewModel
-		userModel: data.UserModel{DB: db},          // Initialize userModel
+		bookModel: data.BookModel{DB: db},        
+		readingListModel: data.ReadingListModel{DB: db}, 
+		reviewModel: data.ReviewModel{DB: db},    
+		userModel: data.UserModel{DB: db},         
 	}
 
-	// Start the server
 	err = appInstance.serve()
 	if err != nil {
 		logger.Error(err.Error())
@@ -97,12 +93,9 @@ func openDB(settings serverConfig) (*sql.DB, error) {
 	return db, nil
 }
 
-// Define your JWT secret key
-//var jwtSecretKey = []byte("your-secret-key")  // Keep this key safe!
 var jwtSecretKey = []byte(os.Getenv("JWT_SECRET_KEY"))
 
 
-// Method to parse the token and extract user information
 func (a *applicationDependencies) parseToken(tokenString string) (*jwt.Token, error) {
 	// Parse the token using the jwt-go package
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
