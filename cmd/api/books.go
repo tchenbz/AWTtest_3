@@ -86,75 +86,78 @@ func (a *applicationDependencies) displayBookHandler(w http.ResponseWriter, r *h
 
 
 func (a *applicationDependencies) updateBookHandler(w http.ResponseWriter, r *http.Request) {
-	id, err := a.readIDParam(r)
-	if err != nil {
-		a.notFoundResponse(w, r)
-		return
-	}
+    id, err := a.readIDParam(r)
+    if err != nil {
+        a.notFoundResponse(w, r)
+        return
+    }
 
-	book, err := a.bookModel.Get(id)  
-	if err != nil {
-		switch {
-		case errors.Is(err, data.ErrRecordNotFound):
-			a.notFoundResponse(w, r)
-		default:
-			a.serverErrorResponse(w, r, err)
-		}
-		return
-	}
+    // Fetch the book from the database
+    book, err := a.bookModel.Get(id)
+    if err != nil {
+        switch {
+        case errors.Is(err, data.ErrRecordNotFound):
+            a.notFoundResponse(w, r)
+        default:
+            a.serverErrorResponse(w, r, err)
+        }
+        return
+    }
 
-	var input struct {
-		Title          *string  `json:"title"`
-		Authors        *[]string `json:"authors"`
-		ISBN           *string  `json:"isbn"`
-		PublicationDate *string  `json:"publication_date"`
-		Genre          *string  `json:"genre"`
-		Description    *string  `json:"description"`
-		AverageRating  *float64 `json:"average_rating"`
-	}
+    // Decode the incoming JSON request
+    var input struct {
+        Title           *string   `json:"title"`
+        Authors         []string  `json:"authors"`
+        ISBN            *string   `json:"isbn"`
+        PublicationDate *string   `json:"publication_date"`
+        Genre           *string   `json:"genre"`
+        Description     *string   `json:"description"`
+        AverageRating   *float64  `json:"average_rating"`
+    }
 
-	err = a.readJSON(w, r, &input)
-	if err != nil {
-		a.badRequestResponse(w, r, err)
-		return
-	}
+    err = a.readJSON(w, r, &input)
+    if err != nil {
+        a.badRequestResponse(w, r, err)
+        return
+    }
 
-	// Update the book with the new values if they exist
-	if input.Title != nil {
-		book.Title = *input.Title
-	}
-	if input.Authors != nil {
-		book.Authors = *input.Authors
-	}
-	if input.ISBN != nil {
-		book.ISBN = *input.ISBN
-	}
-	if input.PublicationDate != nil {
-		book.PublicationDate = *input.PublicationDate
-	}
-	if input.Genre != nil {
-		book.Genre = *input.Genre
-	}
-	if input.Description != nil {
-		book.Description = *input.Description
-	}
-	if input.AverageRating != nil {
-		book.AverageRating = *input.AverageRating
-	}
+    // Update only the fields provided in the request
+    if input.Title != nil {
+        book.Title = *input.Title
+    }
+    if input.Authors != nil {
+        book.Authors = input.Authors
+    }
+    if input.ISBN != nil {
+        book.ISBN = *input.ISBN
+    }
+    if input.PublicationDate != nil {
+        book.PublicationDate = *input.PublicationDate
+    }
+    if input.Genre != nil {
+        book.Genre = *input.Genre
+    }
+    if input.Description != nil {
+        book.Description = *input.Description
+    }
+    if input.AverageRating != nil {
+        book.AverageRating = *input.AverageRating
+    }
 
-	// Update the book in the database
-	err = a.bookModel.Update(book)  
-	if err != nil {
-		a.serverErrorResponse(w, r, err)
-		return
-	}
+    // Save the updated book
+    err = a.bookModel.Update(book)
+    if err != nil {
+        a.serverErrorResponse(w, r, err)
+        return
+    }
 
-	data := envelope{"book": book}
-	err = a.writeJSON(w, http.StatusOK, data, nil)
-	if err != nil {
-		a.serverErrorResponse(w, r, err)
-	}
+    data := envelope{"book": book}
+    err = a.writeJSON(w, http.StatusOK, data, nil)
+    if err != nil {
+        a.serverErrorResponse(w, r, err)
+    }
 }
+
 
 func (a *applicationDependencies) deleteBookHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := a.readIDParam(r)
@@ -221,50 +224,39 @@ func (a *applicationDependencies) listBooksHandler(w http.ResponseWriter, r *htt
 	}
 }
 
-
 func (a *applicationDependencies) searchBooksHandler(w http.ResponseWriter, r *http.Request) {
-	var input struct {
-		Title    string
-		Author   string  
-		Genre    string
-		data.Filters
-	}
+    // Parse the query parameters
+    query := r.URL.Query()
+    title := query.Get("title")
+    author := query.Get("author")
+    genre := query.Get("genre")
 
-	// Parse query parameters
-	query := r.URL.Query()
-	input.Title = a.getSingleQueryParameter(query, "title", "")
-	input.Author = a.getSingleQueryParameter(query, "author", "")  
-	input.Genre = a.getSingleQueryParameter(query, "genre", "")
-	input.Filters.Page = a.getSingleIntegerParameter(query, "page", 1, validator.New())
-	input.Filters.PageSize = a.getSingleIntegerParameter(query, "page_size", 10, validator.New())
-	input.Filters.Sort = a.getSingleQueryParameter(query, "sort", "id")
-	input.Filters.SortSafeList = []string{"id", "title", "author", "genre", "-id", "-title", "-author", "-genre"}
+    // Parse filters (pagination, sorting)
+    filters := data.Filters{
+        Page:     a.getSingleIntegerParameter(query, "page", 1, validator.New()),
+        PageSize: a.getSingleIntegerParameter(query, "page_size", 10, validator.New()),
+        Sort:     a.getSingleQueryParameter(query, "sort", "id"),
+        SortSafeList: []string{"id", "title", "author", "genre", "-id", "-title", "-author", "-genre"}, // Add sort-safe fields here
+    }
 
-	// Validate filters
-	v := validator.New()
-	data.ValidateFilters(v, input.Filters)
-	if !v.IsEmpty() {
-		a.failedValidationResponse(w, r, v.Errors)
-		return
-	}
+    // Call the SearchBooks method with filters
+    books, metadata, err := a.bookModel.SearchBooks(title, author, genre, filters)
+    if err != nil {
+        a.serverErrorResponse(w, r, err)
+        return
+    }
 
-	// Now call GetAll with all four arguments
-	books, metadata, err := a.bookModel.GetAll(input.Title, input.Author, input.Genre, input.Filters)
-	if err != nil {
-		a.serverErrorResponse(w, r, err)
-		return
-	}
-
-	// Prepare response data
-	data := envelope{
-		"books":    books,
-		"metadata": metadata,
-	}
-	err = a.writeJSON(w, http.StatusOK, data, nil)
-	if err != nil {
-		a.serverErrorResponse(w, r, err)
-	}
+    // Return the search results and metadata
+    data := envelope{
+        "books":    books,
+        "metadata": metadata,
+    }
+    err = a.writeJSON(w, http.StatusOK, data, nil)
+    if err != nil {
+        a.serverErrorResponse(w, r, err)
+    }
 }
+
 
 
 func (a *applicationDependencies) authenticateUser(w http.ResponseWriter, r *http.Request) (*data.User, error) {

@@ -10,15 +10,14 @@ func (a *applicationDependencies) routes() http.Handler {
 	router.NotFound = http.HandlerFunc(a.notFoundResponse)
 	router.MethodNotAllowed = http.HandlerFunc(a.methodNotAllowedResponse)
 
-	// Define non-wildcard routes first
-	//router.HandlerFunc(http.MethodGet, "/v1/books/search", a.searchBooksHandler) // Search books by title/author/genre
 
 	// Routes for Books
 	router.HandlerFunc(http.MethodPost, "/v1/books", a.createBookHandler)        
 	router.HandlerFunc(http.MethodGet, "/v1/books/:id", a.displayBookHandler)   
 	router.HandlerFunc(http.MethodPatch, "/v1/books/:id", a.updateBookHandler)
 	router.HandlerFunc(http.MethodDelete, "/v1/books/:id", a.deleteBookHandler) 
-	router.HandlerFunc(http.MethodGet, "/v1/books", a.listBooksHandler)        
+	router.HandlerFunc(http.MethodGet, "/v1/books", a.listBooksHandler)   
+	router.HandlerFunc(http.MethodGet, "/v1/search/books", a.searchBooksHandler)
 
 	// Routes for Reviews
 	router.HandlerFunc(http.MethodPost, "/v1/books/:id/reviews", a.createReviewHandler)   
