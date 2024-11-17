@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 	"github.com/lib/pq"
 )
@@ -208,12 +207,6 @@ func (m *BookModel) GetAll(title, author, genre string, filters Filters) ([]*Boo
 
 	metadata := calculateMetaData(totalRecords, filters.Page, filters.PageSize)
 	return books, metadata, nil
-}
-
-
-// Helper function to join a slice of strings into a single comma-separated string
-func joinStrings(authors []string) string {
-	return strings.Join(authors, ", ")
 }
 
 func (m *BookModel) SearchBooks(title, author, genre string, filters Filters) ([]*Book, Metadata, error) {
