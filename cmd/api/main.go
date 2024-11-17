@@ -120,3 +120,14 @@ func (a *applicationDependencies) parseToken(tokenString string) (*jwt.Token, er
 	// Return the parsed token
 	return token, nil
 }
+
+// Generate an activation token
+func generateActivationToken(userID int64) (string, error) {
+    claims := jwt.MapClaims{
+        "user_id": userID,
+        "exp":     time.Now().Add(time.Hour * 24).Unix(), // 24 hours expiration
+    }
+
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+    return token.SignedString(jwtSecretKey)
+}

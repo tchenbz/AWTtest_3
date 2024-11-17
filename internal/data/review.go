@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 )
 
@@ -40,38 +41,56 @@ func (m ReviewModel) Insert(review *Review) error {
 	return m.DB.QueryRowContext(ctx, query, args...).Scan(&review.ID, &review.CreatedAt, &review.Version)
 }
 
-// Get retrieves a specific review for a book by review ID
-func (m ReviewModel) Get(bookID, reviewID int64) (*Review, error) {
-	if bookID < 1 || reviewID < 1 {
-		return nil, ErrRecordNotFound
-	}
+func (m *ReviewModel) Get(bookID, reviewID int64) (*Review, error) {
+    if bookID < 1 || reviewID < 1 {
+        return nil, ErrRecordNotFound
+    }
 
-	query := `
-		SELECT id, book_id, content, author, rating, helpful_count, created_at, version
-		FROM reviews
-		WHERE book_id = $1 AND id = $2`
+    query := `
+        SELECT id, book_id, content, author, rating, helpful_count, created_at, version
+        FROM reviews
+        WHERE book_id = $1 AND id = $2`
 
-	var review Review
+    var review Review
+    ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+    defer cancel()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
+    err := m.DB.QueryRowContext(ctx, query, bookID, reviewID).Scan(
+        &review.ID,
+        &review.BookID,
+        &review.Content,
+        &review.Author,
+        &review.Rating,
+        &review.HelpfulCount,
+        &review.CreatedAt,
+        &review.Version,
+    )
 
-	err := m.DB.QueryRowContext(ctx, query, bookID, reviewID).Scan(
-		&review.ID, &review.BookID, &review.Content, &review.Author, 
-		&review.Rating, &review.HelpfulCount, &review.CreatedAt, &review.Version,
-	)
+    // if err != nil {
+    //     switch {
+    //     case errors.Is(err, sql.ErrNoRows):
+    //         return nil, ErrRecordNotFound
+    //     default:
+    //         return nil, err
+    //     }
+    // }
 
 	if err != nil {
-		switch {
-		case errors.Is(err, sql.ErrNoRows):
-			return nil, ErrRecordNotFound
-		default:
-			return nil, err
-		}
-	}
+        // Log the error message
+        log.Printf("Error fetching review with book_id %d and review_id %d: %v", bookID, reviewID, err)
 
-	return &review, nil
+        // Check if the error is because no record was found
+        switch {
+        case errors.Is(err, sql.ErrNoRows):
+            return nil, ErrRecordNotFound // Return the custom error for "not found"
+        default:
+            return nil, err // Return other types of errors
+        }
+    }
+
+    return &review, nil
 }
+
 
 // Update modifies an existing review
 func (m ReviewModel) Update(review *Review) error {
@@ -249,13 +268,6 @@ func (m ReviewModel) GetAllForBook(bookID int64, content, author string, rating 
 
 // GetAllByUser retrieves all reviews written by a user
 func (m *ReviewModel) GetAllByUser(userID int64, filters Filters) ([]*Review, Metadata, error) {
-	// // Validate filters
-	// v := validator.New()
-	// ValidateFilters(v, filters)
-	// if !v.IsEmpty() {
-	// 	return nil, Metadata{}, fmt.Errorf("invalid filters: %v", v.Errors)
-	// }
-
 	query := fmt.Sprintf(`
 		SELECT COUNT(*) OVER(), id, book_id, content, author, rating, helpful_count, created_at, version
 		FROM reviews

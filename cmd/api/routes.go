@@ -23,8 +23,8 @@ func (a *applicationDependencies) routes() http.Handler {
 
 	// Routes for Reviews
 	router.HandlerFunc(http.MethodPost, "/v1/books/:id/reviews", a.createReviewHandler)   // Create a review for a book
-	router.HandlerFunc(http.MethodGet, "/v1/books/:id/reviews/:review_id", a.displayReviewHandler) // Get a specific review
-	router.HandlerFunc(http.MethodPatch, "/v1/books/:id/reviews/:review_id", a.updateReviewHandler) // Update a review
+	router.HandlerFunc(http.MethodGet, "/v1/books/:id/reviews/:review_id", a.displayReviewHandler)
+	router.HandlerFunc(http.MethodPatch, "/v1/books/:id/reviews/:review_id", a.updateReviewHandler)  // Update review for a book
 	router.HandlerFunc(http.MethodDelete, "/v1/books/:id/reviews/:review_id", a.deleteReviewHandler) // Delete a review
 	router.HandlerFunc(http.MethodGet, "/v1/reviews", a.listReviewsHandler)   // List all reviews
 	router.HandlerFunc(http.MethodGet, "/v1/books/:id/reviews", a.listBookReviewsHandler) // List reviews for a specific book
@@ -37,6 +37,8 @@ func (a *applicationDependencies) routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/v1/readinglists", a.listReadingListsHandler)         // List all reading lists
 
 	// Routes for Users
+	router.HandlerFunc(http.MethodPost, "/v1/users", a.createUserHandler)  // Create a user
+	router.HandlerFunc(http.MethodPost, "/v1/login", a.loginUserHandler)  // Login route
 	router.HandlerFunc(http.MethodGet, "/v1/users/:id", a.getUserProfileHandler)        // Get user profile
 	router.HandlerFunc(http.MethodGet, "/v1/users/:id/lists", a.getUserReadingListsHandler) // Get user's reading lists
 	router.HandlerFunc(http.MethodGet, "/v1/users/:id/reviews", a.getUserReviewsHandler)  // Get user's reviews

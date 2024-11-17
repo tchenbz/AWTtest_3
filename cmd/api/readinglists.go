@@ -1,90 +1,87 @@
 package main
 
 import (
+	"errors"
+	"log"
 	"net/http"
-	"fmt"
+
+	//"fmt"
 	"github.com/tchenbz/AWTtest_3/internal/data"
 	"github.com/tchenbz/AWTtest_3/internal/validator"
 )
 
 // createReadingListHandler handles POST requests for creating a new reading list.
 func (a *applicationDependencies) createReadingListHandler(w http.ResponseWriter, r *http.Request) {
-	var input struct {
-		Name        string   `json:"name"`
-		Description string   `json:"description"`
-		CreatedBy   int64    `json:"created_by"`
-		Status      string   `json:"status"`
-		Books       []int64  `json:"books"` // IDs of books in the reading list
-	}
+    var input struct {
+        Name        string `json:"name"`
+        Description string `json:"description"`
+        CreatedBy   int64  `json:"created_by"`
+        Status      string `json:"status"`
+    }
 
-	// Read the incoming JSON request
-	err := a.readJSON(w, r, &input)
-	if err != nil {
-		a.badRequestResponse(w, r, err)
-		return
-	}
+    // Parse the request body
+    err := a.readJSON(w, r, &input)
+    if err != nil {
+        a.badRequestResponse(w, r, err)
+        return
+    }
 
-	// Create a new ReadingList object
-	readingList := &data.ReadingList{
-		Name:        input.Name,
-		Description: input.Description,
-		CreatedBy:   input.CreatedBy,
-		Status:      input.Status,
-		Books:       input.Books,
-	}
+    // Create a new ReadingList object
+    readingList := &data.ReadingList{
+        Name:        input.Name,
+        Description: input.Description,
+        CreatedBy:   input.CreatedBy,
+        Status:      input.Status,
+    }
 
-	// Validate the ReadingList object
-	v := validator.New()
-	// Add your validation function (e.g., ValidateReadingList) if needed
-	// data.ValidateReadingList(v, readingList)
-	if !v.IsEmpty() {
-		a.failedValidationResponse(w, r, v.Errors)
-		return
-	}
+    // Insert the reading list into the database
+    err = a.readingListModel.Insert(readingList)
+    if err != nil {
+        a.serverErrorResponse(w, r, err)
+        return
+    }
 
-	// Insert the ReadingList into the database
-	err = a.readingListModel.Insert(readingList)
-	if err != nil {
-		a.serverErrorResponse(w, r, err)
-		return
-	}
-
-	// Set the Location header for the newly created reading list and respond with the created reading list
-	headers := make(http.Header)
-	headers.Set("Location", fmt.Sprintf("/v1/readinglists/%d", readingList.ID))
-
-	data := envelope{"readinglist": readingList}
-	err = a.writeJSON(w, http.StatusCreated, data, headers)
-	if err != nil {
-		a.serverErrorResponse(w, r, err)
-	}
+    // Respond with the newly created reading list
+    data := envelope{"readinglist": readingList}
+    err = a.writeJSON(w, http.StatusCreated, data, nil)
+    if err != nil {
+        a.serverErrorResponse(w, r, err)
+    }
 }
+
 
 // displayReadingListHandler handles GET requests to fetch a specific reading list by ID.
 func (a *applicationDependencies) displayReadingListHandler(w http.ResponseWriter, r *http.Request) {
-	id, err := a.readIDParam(r)
-	if err != nil {
-		a.notFoundResponse(w, r)
-		return
-	}
+  // Extract the ID from the URL parameter
+  id, err := a.readIDParam(r)
+  if err != nil {
+	  log.Printf("Error reading ID from URL: %v", err)  // Log error if ID is not found
+	  a.notFoundResponse(w, r)
+	  return
+  }
 
-	readingList, err := a.readingListModel.Get(id)
-	if err != nil {
-		switch {
-		case err == data.ErrRecordNotFound:
-			a.notFoundResponse(w, r)
-		default:
-			a.serverErrorResponse(w, r, err)
-		}
-		return
-	}
+  // Fetch the reading list from the database
+  readingList, err := a.readingListModel.Get(id)
+  if err != nil {
+	  // Log the error before handling it
+	  log.Printf("Error fetching reading list with ID %d: %v", id, err)
+	  switch {
+	  case errors.Is(err, data.ErrRecordNotFound):
+		  a.notFoundResponse(w, r)
+	  default:
+		  a.serverErrorResponse(w, r, err)
+	  }
+	  return
+  }
 
-	// Return the reading list in JSON format
-	data := envelope{"readinglist": readingList}
-	err = a.writeJSON(w, http.StatusOK, data, nil)
-	if err != nil {
-		a.serverErrorResponse(w, r, err)
-	}
+  // Return the reading list in JSON format
+  data := envelope{"readinglist": readingList}
+  err = a.writeJSON(w, http.StatusOK, data, nil)
+  if err != nil {
+	  // Log error if response writing fails
+	  log.Printf("Error writing response for reading list ID %d: %v", id, err)
+	  a.serverErrorResponse(w, r, err)
+  }
 }
 
 // updateReadingListHandler handles PATCH requests to update a specific reading list by ID.

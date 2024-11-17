@@ -89,16 +89,19 @@ func (a *applicationDependencies)readJSON(w http.ResponseWriter, r *http.Request
 	return nil
 }
 
-func (a *applicationDependencies)readIDParam(r *http.Request)(int64, error) {
+func (a *applicationDependencies) readIDParam(r *http.Request) (int64, error) {
     params := httprouter.ParamsFromContext(r.Context())
-    id, err := strconv.ParseInt(params.ByName("id"), 10, 64)
-    if err != nil || id < 1 {
-        return 0, errors.New("invalid id parameter")
+    idParam := params.ByName("id") // This gets the parameter by its name ("id" or "review_id")
+    if idParam == "" {
+        return 0, fmt.Errorf("missing or invalid ID parameter")
     }
-
+    id, err := strconv.ParseInt(idParam, 10, 64) // Convert string to int64
+    if err != nil {
+        return 0, fmt.Errorf("invalid ID parameter: %v", err)
+    }
     return id, nil
-
 }
+
 
 func (a *applicationDependencies) getSingleQueryParameter(queryParameters url.Values, key string, defaultValue string) string {
 	result := queryParameters.Get(key)

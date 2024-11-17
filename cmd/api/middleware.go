@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
 	"sync"
 	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/time/rate"
 )
 
@@ -71,4 +73,40 @@ func (a *applicationDependencies) rateLimit(next http.Handler) http.Handler {
         next.ServeHTTP(w, r)
     })
 
+}
+
+// AuthMiddleware is a middleware function that ensures the request is authenticated.
+func (a *applicationDependencies) AuthMiddleware(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        tokenString := r.Header.Get("Authorization")
+        if tokenString == "" {
+            a.failedValidationResponse(w, r, map[string]string{"error": "missing authorization token"})
+            return
+        }
+
+        // Parse the token
+        token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+            if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+                return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+            }
+            return []byte("your-secret-key"), nil
+        })
+        if err != nil || !token.Valid {
+            a.failedValidationResponse(w, r, map[string]string{"error": "invalid token"})
+            return
+        }
+
+        // Extract the user ID from the token
+        claims, ok := token.Claims.(jwt.MapClaims)
+        if !ok {
+            a.failedValidationResponse(w, r, map[string]string{"error": "invalid token claims"})
+            return
+        }
+
+        userID := claims["user_id"].(float64) // User ID is in the token claims
+
+        // Store the user ID in the request context
+        ctx := context.WithValue(r.Context(), "user_id", userID)
+        next.ServeHTTP(w, r.WithContext(ctx))
+    })
 }

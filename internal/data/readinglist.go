@@ -30,20 +30,29 @@ type ReadingListModel struct {
 
 // Insert adds a new reading list to the database.
 func (m *ReadingListModel) Insert(readingList *ReadingList) error {
-	query := `
-		INSERT INTO reading_lists (name, description, created_by, status)
-		VALUES ($1, $2, $3, $4)
-		RETURNING id, created_at, version`
+    query := `
+        INSERT INTO reading_lists (name, description, created_by, status)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id, created_at, version`
 
-	args := []interface{}{
-		readingList.Name,
-		readingList.Description,
-		readingList.CreatedBy,
-		readingList.Status,
-	}
+    // Ensure the arguments match the columns in your table
+    args := []interface{}{
+        readingList.Name,
+        readingList.Description,
+        readingList.CreatedBy,
+        readingList.Status,
+    }
 
-	return m.DB.QueryRowContext(context.Background(), query, args...).Scan(&readingList.ID, &readingList.CreatedAt, &readingList.Version)
+    // Insert into the database and return the inserted values
+    err := m.DB.QueryRowContext(context.Background(), query, args...).Scan(
+        &readingList.ID,        // Get the inserted ID
+        &readingList.CreatedAt,  // Get the created timestamp
+        &readingList.Version,    // Get the version
+    )
+
+    return err
 }
+
 
 // Get retrieves a specific reading list by ID.
 func (m *ReadingListModel) Get(id int64) (*ReadingList, error) {
@@ -262,3 +271,4 @@ func (m *ReadingListModel) GetAllByUser(userID int64, filters Filters) ([]*Readi
     metadata := calculateMetaData(totalRecords, filters.Page, filters.PageSize)
     return readingLists, metadata, nil
 }
+
